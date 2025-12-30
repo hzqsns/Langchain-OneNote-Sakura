@@ -24,6 +24,12 @@ export interface OpenAIConfig {
   embeddingModel: string;
 }
 
+export interface GeminiConfig {
+  apiKey: string;
+  modelName: string;
+  embeddingModel: string;
+}
+
 export interface VectorStoreConfig {
   persistDirectory: string;
   collectionName: string;
@@ -40,6 +46,7 @@ export interface AppConfig {
 export interface Settings {
   azure: AzureConfig;
   openai: OpenAIConfig;
+  gemini: GeminiConfig;
   vectorstore: VectorStoreConfig;
   app: AppConfig;
 }
@@ -63,6 +70,12 @@ const settings: Settings = {
     apiBase: process.env.OPENAI_API_BASE || 'https://api.openai.com/v1',
     modelName: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
     embeddingModel: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-ada-002',
+  },
+
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || '',
+    modelName: process.env.GEMINI_MODEL || 'gemini-pro',
+    embeddingModel: process.env.GEMINI_EMBEDDING_MODEL || 'embedding-001',
   },
 
   vectorstore: {

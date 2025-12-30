@@ -7,9 +7,10 @@ import { Document } from 'langchain/document';
 import { PromptTemplate } from '@langchain/core/prompts';
 import { RetrievalQAChain } from 'langchain/chains';
 import { ChatOpenAI } from '@langchain/openai';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { settings } from '../config/index.js';
-import { HNSWLibStore } from '../vectorstore/index.js';
+import { LanceDBStore } from '../vectorstore/index.js';
 
 // 默认提示词模板
 const DEFAULT_QA_TEMPLATE = `你是一个基于 OneNote 笔记的智能助手。请根据以下检索到的笔记内容回答用户的问题。
@@ -33,14 +34,14 @@ export interface QAResult {
 }
 
 export class QAChain {
-  private vectorstore: HNSWLibStore;
+  private vectorstore: LanceDBStore;
   private llm: BaseChatModel;
   private prompt: PromptTemplate;
   private chain: RetrievalQAChain | null = null;
 
   constructor(
-    vectorstore: HNSWLibStore,
-    llmType: 'openai' | 'ollama' = 'openai',
+    vectorstore: LanceDBStore,
+    llmType: 'openai' | 'gemini' | 'ollama' = 'gemini',
     modelName?: string,
     temperature: number = 0,
     promptTemplate?: string
@@ -54,10 +55,23 @@ export class QAChain {
    * 创建 LLM 实例
    */
   private createLLM(
-    llmType: 'openai' | 'ollama',
+    llmType: 'openai' | 'gemini' | 'ollama',
     modelName?: string,
     temperature: number = 0
   ): BaseChatModel {
+    if (llmType === 'gemini') {
+      const apiKey = settings.gemini.apiKey;
+      if (!apiKey) {
+        throw new Error('缺少 GEMINI_API_KEY 配置');
+      }
+
+      return new ChatGoogleGenerativeAI({
+        apiKey: apiKey,
+        modelName: modelName || settings.gemini.modelName,
+        temperature,
+      });
+    }
+
     if (llmType === 'openai') {
       const apiKey = settings.openai.apiKey;
       if (!apiKey) {
@@ -72,11 +86,8 @@ export class QAChain {
     }
 
     if (llmType === 'ollama') {
-      // Ollama 支持需要额外配置
-      // 这里先抛出错误，后续可以添加 Ollama 支持
       throw new Error(
-        'Ollama 支持即将推出。目前请使用 OpenAI。\n' +
-        '如需使用 Ollama，可以安装 @langchain/community 并配置 ChatOllama'
+        'Ollama 支持即将推出。目前请使用 Gemini 或 OpenAI。'
       );
     }
 
@@ -151,8 +162,8 @@ export class QAChain {
  * 获取问答链的便捷函数
  */
 export async function getQAChain(
-  vectorstore: HNSWLibStore,
-  llmType: 'openai' | 'ollama' = 'openai'
+  vectorstore: LanceDBStore,
+  llmType: 'openai' | 'gemini' | 'ollama' = 'gemini'
 ): Promise<QAChain> {
   const chain = new QAChain(vectorstore, llmType);
   await chain.initialize();

@@ -1,24 +1,60 @@
 /**
  * Embedding 模型工厂
- * 支持 OpenAI Embeddings 和本地模型
+ * 支持 Gemini、OpenAI Embeddings
  */
 
 import { Embeddings } from '@langchain/core/embeddings';
 import { OpenAIEmbeddings } from '@langchain/openai';
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import { settings } from '../config/index.js';
+
+export type EmbeddingProvider = 'gemini' | 'openai';
 
 export class EmbeddingFactory {
   /**
    * 创建 Embedding 模型实例
    */
-  static create(useLocal?: boolean): Embeddings {
-    const shouldUseLocal = useLocal ?? settings.app.useLocalModel;
+  static create(provider?: EmbeddingProvider): Embeddings {
+    // 默认使用 Gemini，如果没有 Gemini Key 则尝试 OpenAI
+    const selectedProvider = provider || EmbeddingFactory.detectProvider();
 
-    if (shouldUseLocal) {
-      return EmbeddingFactory.createLocal();
+    if (selectedProvider === 'gemini') {
+      return EmbeddingFactory.createGemini();
     } else {
       return EmbeddingFactory.createOpenAI();
     }
+  }
+
+  /**
+   * 自动检测可用的 Provider
+   */
+  private static detectProvider(): EmbeddingProvider {
+    if (settings.gemini.apiKey) {
+      return 'gemini';
+    }
+    if (settings.openai.apiKey) {
+      return 'openai';
+    }
+    throw new Error('请配置 GEMINI_API_KEY 或 OPENAI_API_KEY');
+  }
+
+  /**
+   * 创建 Gemini Embedding 模型
+   */
+  static createGemini(apiKey?: string, model?: string): GoogleGenerativeAIEmbeddings {
+    const key = apiKey || settings.gemini.apiKey;
+    const modelName = model || settings.gemini.embeddingModel;
+
+    if (!key) {
+      throw new Error('缺少 GEMINI_API_KEY 配置');
+    }
+
+    console.log(`🔄 使用 Gemini Embedding: ${modelName}`);
+
+    return new GoogleGenerativeAIEmbeddings({
+      apiKey: key,
+      modelName: modelName,
+    });
   }
 
   /**
@@ -29,40 +65,21 @@ export class EmbeddingFactory {
     const modelName = model || settings.openai.embeddingModel;
 
     if (!key) {
-      throw new Error(
-        '缺少 OpenAI API Key，请设置环境变量 OPENAI_API_KEY 或在配置中指定'
-      );
+      throw new Error('缺少 OPENAI_API_KEY 配置');
     }
+
+    console.log(`🔄 使用 OpenAI Embedding: ${modelName}`);
 
     return new OpenAIEmbeddings({
       openAIApiKey: key,
       modelName: modelName,
     });
   }
-
-  /**
-   * 创建本地 Embedding 模型
-   * 注意：LangChain.js 的本地 Embedding 支持有限，这里提供一个占位实现
-   * 实际使用时可以接入 HuggingFace Transformers.js 或其他本地方案
-   */
-  static createLocal(): Embeddings {
-    // LangChain.js 目前对本地 Embedding 的支持不如 Python 版
-    // 这里先使用 OpenAI 作为 fallback，你可以后续替换为其他方案
-    console.warn(
-      '⚠️ LangChain.js 的本地 Embedding 支持有限，将使用 OpenAI Embedding'
-    );
-    console.warn('   如需真正的本地 Embedding，可以考虑：');
-    console.warn('   1. 使用 @xenova/transformers 库');
-    console.warn('   2. 调用本地 Ollama 的 Embedding API');
-    
-    return EmbeddingFactory.createOpenAI();
-  }
 }
 
 /**
  * 获取 Embedding 模型的便捷函数
  */
-export function getEmbeddings(useLocal?: boolean): Embeddings {
-  return EmbeddingFactory.create(useLocal);
+export function getEmbeddings(provider?: EmbeddingProvider): Embeddings {
+  return EmbeddingFactory.create(provider);
 }
-

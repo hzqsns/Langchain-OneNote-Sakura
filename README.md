@@ -7,7 +7,7 @@
 - 📖 **自动获取 OneNote**：通过 Microsoft Graph API 自动获取你的 OneNote 笔记
 - 🔍 **语义搜索**：基于向量相似度的智能搜索，不仅仅是关键词匹配
 - 💬 **智能问答**：基于你的笔记内容回答问题
-- 💾 **本地存储**：HNSWLib 向量数据库，纯本地运行，无需额外服务
+- 💾 **本地存储**：LanceDB 向量数据库，纯本地运行，预编译二进制，无需额外服务
 - 🔷 **TypeScript**：完整的类型支持
 
 ## 📦 技术栈
@@ -15,7 +15,7 @@
 | 组件 | 技术选型 | 说明 |
 |------|----------|------|
 | **框架** | LangChain.js | 核心 RAG 框架 |
-| **向量数据库** | HNSWLib | 纯本地，无需服务，速度极快 |
+| **向量数据库** | LanceDB | 纯本地，预编译，功能丰富 |
 | **Embedding** | OpenAI Ada | text-embedding-ada-002 |
 | **LLM** | OpenAI GPT | gpt-3.5-turbo |
 | **数据来源** | Microsoft Graph API | 自动同步 OneNote |
@@ -31,7 +31,7 @@
 │   ├── embeddings/
 │   │   └── embedding-factory.ts # Embedding 模型工厂
 │   ├── vectorstore/
-│   │   └── hnswlib-store.ts   # HNSWLib 向量存储
+│   │   └── lancedb-store.ts   # LanceDB 向量存储
 │   ├── chains/
 │   │   └── qa-chain.ts        # 问答链
 │   ├── config/
@@ -47,7 +47,7 @@
 ### 1. 安装依赖
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. 注册 Azure 应用（获取 Microsoft Graph API 权限）
@@ -92,19 +92,22 @@ OPENAI_API_KEY=你的OpenAI密钥
 
 ```bash
 # 从 OneNote 加载文档到知识库
-npm run load
+pnpm load
 
 # 加载指定笔记本
-npx tsx src/index.ts load --notebook "工作笔记"
+pnpm load --notebook "工作笔记"
 
 # 提问
-npm run ask "什么是机器学习？"
+pnpm ask "什么是机器学习？"
 
 # 搜索相关内容
-npm run search "Python 教程"
+pnpm search "Python 教程"
 
 # 交互式问答
-npm run interactive
+pnpm interactive
+
+# 查看知识库统计
+pnpm stats
 ```
 
 #### 代码方式
@@ -150,16 +153,16 @@ console.log(answer);
 ============================================================
 ```
 
-## 🎯 为什么选择 HNSWLib？
+## 🎯 为什么选择 LanceDB？
 
-| 特性 | HNSWLib | ChromaDB |
-|------|---------|----------|
-| **运行方式** | ✅ 纯内嵌，无需服务 | ❌ JS 版需 Docker |
-| **配置** | ✅ npm install 即用 | ❌ 需启动服务 |
-| **性能** | ⭐⭐⭐⭐⭐ 极快 | ⭐⭐⭐⭐ |
-| **持久化** | ✅ 本地文件 | ✅ |
+| 特性 | LanceDB | ChromaDB | HNSWLib |
+|------|---------|----------|---------|
+| **运行方式** | ✅ 纯内嵌 | ❌ JS 版需 Docker | ✅ 纯内嵌 |
+| **安装** | ✅ 预编译，直接用 | ❌ 需启动服务 | ❌ 需本地编译 |
+| **增删改查** | ✅ 全支持 | ✅ | ❌ 不支持删除 |
+| **性能** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
 
-HNSWLib 更适合个人本地使用，零配置，即装即用！
+LanceDB 预编译二进制文件，无需本地编译，功能丰富，适合个人使用！
 
 ## 🐛 常见问题
 

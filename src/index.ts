@@ -5,12 +5,12 @@
 import { Command } from 'commander';
 import * as readline from 'readline';
 import { OneNoteLoader } from './loaders/index.js';
-import { HNSWLibStore } from './vectorstore/index.js';
+import { LanceDBStore } from './vectorstore/index.js';
 import { QAChain } from './chains/index.js';
 import { Document } from 'langchain/document';
 
 class OneNoteKnowledgeBase {
-  private vectorstore: HNSWLibStore | null = null;
+  private vectorstore: LanceDBStore | null = null;
   private qaChain: QAChain | null = null;
   private initialized = false;
 
@@ -19,7 +19,7 @@ class OneNoteKnowledgeBase {
    */
   async initialize(): Promise<void> {
     console.log('🚀 初始化 OneNote 知识库...');
-    this.vectorstore = new HNSWLibStore();
+    this.vectorstore = new LanceDBStore();
     await this.vectorstore.initialize();
     this.initialized = true;
     console.log('✅ 初始化完成');
@@ -49,7 +49,7 @@ class OneNoteKnowledgeBase {
   /**
    * 设置问答链
    */
-  async setupQA(llmType: 'openai' | 'ollama' = 'openai'): Promise<void> {
+  async setupQA(llmType: 'gemini' | 'openai' | 'ollama' = 'gemini'): Promise<void> {
     if (!this.initialized) {
       await this.initialize();
     }
@@ -170,7 +170,7 @@ class OneNoteKnowledgeBase {
       await this.initialize();
     }
 
-    const stats = this.vectorstore!.getCollectionStats();
+    const stats = await this.vectorstore!.getCollectionStats();
 
     console.log('\n📊 知识库统计:');
     console.log(`   集合名称: ${stats.collectionName}`);
@@ -201,7 +201,7 @@ program
   .command('ask <question>')
   .description('提问')
   .option('-s, --sources', '显示来源')
-  .option('--llm <type>', 'LLM 类型 (openai/ollama)', 'openai')
+  .option('--llm <type>', 'LLM 类型 (gemini/openai)', 'gemini')
   .action(async (question, options) => {
     const kb = new OneNoteKnowledgeBase();
     await kb.initialize();
@@ -222,7 +222,7 @@ program
 program
   .command('interactive')
   .description('交互式问答模式')
-  .option('--llm <type>', 'LLM 类型 (openai/ollama)', 'openai')
+  .option('--llm <type>', 'LLM 类型 (gemini/openai)', 'gemini')
   .action(async (options) => {
     const kb = new OneNoteKnowledgeBase();
     await kb.initialize();

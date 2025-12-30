@@ -1,2 +1,2 @@
-export { HNSWLibStore, getVectorStore } from './hnswlib-store.js';
-export type { CollectionStats } from './hnswlib-store.js';
+export { LanceDBStore, getVectorStore } from './lancedb-store.js';
+export type { CollectionStats, VectorRecord } from './lancedb-store.js';
